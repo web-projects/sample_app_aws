@@ -3,6 +3,7 @@ lock "~> 3.10.2"
 
 set :application, 'sample_app_aws'
 set :repo_url, 'git@github.com:web-projects/sample_app_aws.git'
+set :scm, :git
 
 set :branch, :master
 set :deploy_to, '/home/deploy/sample_app_aws'
@@ -20,7 +21,7 @@ set :puma_state, "#{shared_path}/tmp/pids/puma.state"
 set :puma_pid, "#{shared_path}/tmp/pids/puma.pid"
 # accept array for multi-bind
 set :puma_bind, "unix://#{shared_path}/tmp/sockets/puma.sock"
-set :puma_conf, "#{shared_path}/puma.rb"
+#set :puma_conf, "#{shared_path}/puma.rb"
 set :puma_access_log, "#{shared_path}/log/puma_error.log"
 set :puma_error_log, "#{shared_path}/log/puma_access.log"
 set :puma_role, :app
@@ -49,9 +50,11 @@ set :puma_preload_app, false
 
 # Default value for :linked_files is []
 # append :linked_files, "config/database.yml"
+set :linked_files, fetch(:linked_files, []).push('config/database.yml', 'config/secrets.yml', 'config/puma.rb')
 
 # Default value for linked_dirs is []
 # append :linked_dirs, "log", "tmp/pids", "tmp/cache", "tmp/sockets", "public/system"
+set :linked_dirs, fetch(:linked_dirs, []).push('log', 'tmp/pids', 'tmp/cache', 'tmp/sockets', 'vendor/bundle', 'public/system', 'public/uploads')
 
 # Default value for default_env is {}
 # set :default_env, { path: "/opt/ruby/bin:$PATH" }
@@ -64,3 +67,12 @@ set :puma_preload_app, false
 
 # Uncomment the following to require manually verifying the host key before first deploy.
 # set :ssh_options, verify_host_key: :secure
+
+# Puma:
+set :puma_conf, "#{shared_path}/config/puma.rb"
+
+namespace :deploy do
+  before 'check:linked_files', 'puma:config'
+  before 'check:linked_files', 'puma:nginx_config'
+  after 'puma:smart_restart', 'nginx:restart'
+end
